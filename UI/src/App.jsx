@@ -1,8 +1,9 @@
-import './App.css';
-import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
-import { Login } from './Pages/Login';
-import { Register } from './Pages/Register';
-import { Home } from './Pages/Home';
+import "./App.css";
+import { BrowserRouter, Routes, Route, Link } from "react-router-dom";
+import { Login } from "./Pages/Login";
+import { Register } from "./Pages/Register";
+import { Home } from "./Pages/Home";
+import Pc from "./Pages/Pc";
 
 function App() {
   return (
@@ -31,7 +32,7 @@ function App() {
       </header>
 
       <Routes>
-        <Route path="/" element={<Home />} />
+        <Route path="/" element={<Pc />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
       </Routes>

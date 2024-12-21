@@ -1,10 +1,10 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
 const tokenSchema = new mongoose.Schema({
   user_id: {
     type: mongoose.Schema.Types.ObjectId,
 
-    ref: 'USER',
+    ref: "USER",
   },
   token: String,
   created_at: Date,
@@ -12,14 +12,14 @@ const tokenSchema = new mongoose.Schema({
 });
 
 // Duplicate the ID field.
-tokenSchema.virtual('id').get(function () {
+tokenSchema.virtual("id").get(function () {
   return this._id.toHexString();
 });
 
 // Ensure virtual fields are serialised.
-tokenSchema.set('toJSON', {
+tokenSchema.set("toJSON", {
   virtuals: true,
 });
 
-const Token = mongoose.model('Token', tokenSchema);
+const Token = mongoose.model("Token", tokenSchema);
 module.exports = Token;

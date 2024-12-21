@@ -1,64 +1,40 @@
-const USER = require('../models/user.module');
-const jwt = require('jsonwebtoken');
-const Token = require('../models/token.module');
-const sgMail = require('@sendgrid/mail');
-const bcryptjs = require('bcryptjs');
-const asyncHandler = require('express-async-handler');
+const USER = require("../models/user.module");
+const jwt = require("jsonwebtoken");
+const Token = require("../models/token.module");
+const sgMail = require("@sendgrid/mail");
+const bcryptjs = require("bcryptjs");
 
 sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+
 const refresh_secret = process.env.refresh_secret;
 const access_secret = process.env.access_secret;
 const CLIENT_URL = process.env.CLIENT_URL;
-
-// @desc    Register new user
-// @route   POST /api/users
-// @access  Public
-const Register = asyncHandler(async (req, res) => {
+const Register = async (req, res) => {
   const { name, email, password } = req.body;
-  if (!name || !email || !password) {
-    res.status(400);
-    throw new Error('Please add all fields');
-  }
 
-  // Check if user exists
-  const userExists = await USER.findOne({ email });
-
-  if (userExists) {
-    res.status(400);
-    throw new Error('User already exists');
-  }
-
-  const hash = await bcryptjs.hash(password, 12);
   const user = await USER.create({
-    ...req.body,
-    password: hash,
+    name,
+    email,
+    password: await bcryptjs.hash(password, 12),
   });
 
-  if (user) {
-    res.status(200).send('User has been created!');
-  } else {
-    res.status(400);
-    throw new Error('Invalid credentials');
-  }
-});
+  res.send(user.name);
+};
 
-// @desc    Authenticate a user
-// @route   POST /api/users/login
-// @access  Public
-const Login = asyncHandler(async (req, res) => {
+const Login = async (req, res) => {
   const { email, password } = req.body;
 
   const user = await USER.findOne({ email });
 
   if (!user) {
     return res.status(400).send({
-      message: 'Invalid credentials',
+      message: "Invalid credentials",
     });
   }
 
   if (!(await bcryptjs.compare(password, user.password))) {
     return res.status(400).send({
-      message: 'Invalid credentials',
+      message: "Invalid credentials",
     });
   }
 
@@ -66,11 +42,11 @@ const Login = asyncHandler(async (req, res) => {
     {
       id: user.id,
     },
-    'refresh_secret',
-    { expiresIn: '1w' }
+    "refresh_secret",
+    { expiresIn: "1w" }
   );
 
-  res.cookie('refreshToken', refreshToken, {
+  res.cookie("refreshToken", refreshToken, {
     httpOnly: true,
     maxAge: 7 * 24 * 60 * 60 * 1000, //7 days
   });
@@ -88,52 +64,52 @@ const Login = asyncHandler(async (req, res) => {
     {
       id: user.id,
     },
-    'access_secret',
-    { expiresIn: '30s' }
+    "access_secret",
+    { expiresIn: "30s" }
   );
 
   res.send({
     token,
   });
-});
+};
 
 const AuthenticatedUser = async (req, res) => {
   try {
-    const accessToken = req.header('Authorization')?.split(' ')[1] || '';
+    const accessToken = req.header("Authorization")?.split(" ")[1] || "";
 
-    const payload = jwt.verify(accessToken, 'access_secret');
+    const payload = jwt.verify(accessToken, "access_secret");
 
     if (!payload) {
       return res.status(401).send({
-        message: 'unauthenticated',
+        message: "unauthenticated",
       });
     }
 
-    const user = await USER.findOne(payload.id).select('-password');
+    const user = await USER.findOne(payload.id).select("-password");
 
     if (!user) {
       return res.status(401).send({
-        message: 'unauthenticated',
+        message: "unauthenticated",
       });
     }
 
     res.send(user);
   } catch (e) {
     return res.status(401).send({
-      message: 'unauthenticated',
+      message: "unauthenticated",
     });
   }
 };
 
 const Refresh = async (req, res) => {
   try {
-    const refreshToken = req.cookies['refreshToken'];
+    const refreshToken = req.cookies["refreshToken"];
 
-    const payload = jwt.verify(refreshToken, 'refresh_secret');
+    const payload = jwt.verify(refreshToken, "refresh_secret");
 
     if (!payload) {
       return res.status(401).send({
-        message: 'unauthenticated',
+        message: "unauthenticated",
       });
     }
 
@@ -144,7 +120,7 @@ const Refresh = async (req, res) => {
 
     if (!dbToken) {
       return res.status(401).send({
-        message: 'unauthenticated',
+        message: "unauthenticated",
       });
     }
 
@@ -152,8 +128,8 @@ const Refresh = async (req, res) => {
       {
         id: payload.id,
       },
-      'access_secret',
-      { expiresIn: '30s' }
+      "access_secret",
+      { expiresIn: "30s" }
     );
 
     res.send({
@@ -161,63 +137,63 @@ const Refresh = async (req, res) => {
     });
   } catch (e) {
     return res.status(401).send({
-      message: 'unauthenticated',
+      message: "unauthenticated",
     });
   }
 };
 
 const Logout = async (req, res) => {
-  const refreshToken = req.cookies['refreshToken'];
+  const refreshToken = req.cookies["refreshToken"];
 
   await Token.deleteOne({ token: refreshToken });
 
-  res.cookie('refreshToken', '', { maxAge: 0 });
+  res.cookie("refreshToken", "", { maxAge: 0 });
 
   res.send({
-    message: 'success',
+    message: "success",
   });
 };
 
 // forgot password
-const forgotPassword = asyncHandler(async (req, res) => {
+const forgotPassword = async (req, res) => {
   try {
     const { email } = req.body;
     const user = await USER.findOne({ email });
     if (!user)
-      return res.status(400).json({ msg: 'This email does not exist.' });
+      return res.status(400).json({ msg: "This email does not exist." });
 
     const access_token = jwt.sign(
       {
         id: user.id,
       },
-      'access_secret'
+      "access_secret"
     );
 
     const url = `${CLIENT_URL}/user/reset/${access_token}`;
 
     const msg = {
       to: email, // Change to your recipient
-      from: 'anuraggoutam01@gmail.com', // Change to your verified sender
-      subject: 'Sending with SendGrid is Fun',
-      text: 'and easy to do anywhere, even with Node.js',
+      from: "anuraggoutam01@gmail.com", // Change to your verified sender
+      subject: "Sending with SendGrid is Fun",
+      text: "and easy to do anywhere, even with Node.js",
       html: `<h1>hello</h1><br/>for resetting your password <a href=${url}>Click here</a>`,
     };
     sgMail
       .send(msg)
       .then(() => {
-        console.log('Email sent');
+        console.log("Email sent");
       })
       .catch((error) => {
         console.error(error);
       });
 
-    res.json({ msg: 'Re-send the password, please check your email.' });
+    res.json({ msg: "Re-send the password, please check your email." });
   } catch (err) {
     return res.status(500).json({ msg: err.message });
   }
-});
+};
 // reset password
-const resetPassword = asyncHandler(async (req, res) => {
+const resetPassword = async (req, res) => {
   try {
     const { password } = req.body;
     console.log(password);
@@ -229,13 +205,11 @@ const resetPassword = asyncHandler(async (req, res) => {
       }
     );
 
-    res.json({ msg: 'Password successfully changed!' });
+    res.json({ msg: "Password successfully changed!" });
   } catch (err) {
     return res.status(500).json({ msg: err.message });
   }
-});
-
-
+};
 module.exports = {
   Register,
   Login,

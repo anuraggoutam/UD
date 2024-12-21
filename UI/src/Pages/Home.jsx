@@ -1,18 +1,18 @@
-import { useEffect, useState } from 'react';
-import axios from 'axios';
-import { Navigate } from 'react-router-dom';
+import { useEffect, useState } from "react";
+import axios from "axios";
+import { Navigate } from "react-router-dom";
 
 export const Home = () => {
-  const [name, setName] = useState('');
+  const [name, setName] = useState("");
   const [navigate, setNavigate] = useState(false);
 
   useEffect(() => {
     (async () => {
       try {
-        const { data } = await axios.get('user');
+        const { data } = await axios.get("user");
 
         setName(data.name);
-        localStorage.setItem('name', data.name);
+        localStorage.setItem("name", data.name);
       } catch (e) {
         setNavigate(true);
       }
@@ -20,7 +20,7 @@ export const Home = () => {
   }, []);
 
   const logout = async () => {
-    await axios.post('logout', {}, { withCredentials: true });
+    await axios.post("logout", {}, { withCredentials: true });
 
     setNavigate(true);
   };
