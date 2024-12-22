@@ -54,6 +54,7 @@ export default function Pc() {
                         name="email"
                         placeholder="email@example.com"
                         required=""
+                        onChange={(e) => setEmail(e.target.value)}
                       />
                     </div>
                   </div>
@@ -76,6 +77,7 @@ export default function Pc() {
                         type="password"
                         name="password"
                         required=""
+                        onChange={(e) => setPassword(e.target.value)}
                       />
                     </div>
                   </div>
